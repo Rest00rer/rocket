@@ -1,0 +1,24 @@
+.DS_Store
+.env
+.idea/
+.vscode/
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+
+node_modules/
+dist/
+coverage/
+
+backend/.env
+frontend/.env
+
+# Source briefs are local reference files, not application artifacts
+test.pdf
+tz.pdf
+

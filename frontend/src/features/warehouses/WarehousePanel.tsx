@@ -119,7 +119,7 @@ export function WarehousePanel({
                   }}
                 />
                 <button
-                  className="text-button"
+                  className="button button--quiet button--small"
                   disabled={busyId === warehouse.id}
                   type="button"
                   onClick={() => void rename(warehouse.id)}
@@ -137,7 +137,7 @@ export function WarehousePanel({
                   {!warehouse.archived && (
                     <>
                       <button
-                        className="text-button"
+                        className="button button--quiet button--small"
                         type="button"
                         onClick={() => {
                           setEditingId(warehouse.id);
@@ -147,7 +147,7 @@ export function WarehousePanel({
                         Переименовать
                       </button>
                       <button
-                        className="text-button text-button--danger"
+                        className="button button--quiet button--small button--danger"
                         disabled={busyId === warehouse.id}
                         type="button"
                         onClick={() => void archive(warehouse)}

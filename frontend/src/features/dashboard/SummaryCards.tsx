@@ -1,6 +1,12 @@
 import type { InventorySummary } from "../../shared/api/types";
+import { operationsHref } from "../../shared/navigation";
 
-type MetricItem = { label: string; value: number; href?: string };
+type MetricItem = {
+  label: string;
+  value: number;
+  href?: string;
+  title?: string;
+};
 
 export function SummaryCards({ inventory }: { inventory: InventorySummary }) {
   const totals = inventory.items.reduce(
@@ -20,7 +26,8 @@ export function SummaryCards({ inventory }: { inventory: InventorySummary }) {
         {
           label: "Резерв FBS",
           value: totals.reserved,
-          href: "#operations",
+          href: operationsHref(),
+          title: "Открыть операции с резервом FBS",
         },
       ],
     },
@@ -30,17 +37,20 @@ export function SummaryCards({ inventory }: { inventory: InventorySummary }) {
         {
           label: "Между складами",
           value: inventory.in_transit.between_warehouses,
-          href: "#operations",
+          href: operationsHref(),
+          title: "Открыть операции между складами",
         },
         {
           label: "На FBO",
           value: inventory.in_transit.fbo,
-          href: "#operations",
+          href: operationsHref(),
+          title: "Открыть отправки на FBO",
         },
         {
           label: "Клиенту FBS",
           value: inventory.in_transit.fbs_to_customer,
-          href: "#operations",
+          href: operationsHref("fbs-to-customer"),
+          title: "Открыть отправки клиентам FBS",
         },
       ],
     },
@@ -65,7 +75,7 @@ export function SummaryCards({ inventory }: { inventory: InventorySummary }) {
                   className="metric metric--link"
                   href={item.href}
                   key={item.label}
-                  title="Открыть незавершённые операции"
+                  title={item.title}
                 >
                   {content}
                 </a>

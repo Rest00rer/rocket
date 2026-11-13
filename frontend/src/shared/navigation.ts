@@ -45,6 +45,10 @@ export function inventoryHref(sku?: string) {
   return viewHref("inventory", { sku });
 }
 
+export function operationsHref(section?: string) {
+  return viewHref("operations", { section });
+}
+
 export function warehouseHref(warehouseId?: string) {
   return viewHref("warehouses", { warehouse_id: warehouseId });
 }

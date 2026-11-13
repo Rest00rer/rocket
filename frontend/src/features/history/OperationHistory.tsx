@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { errorMessage } from "../../app/useCheckStock";
 import { loadOperations } from "../../shared/api/client";
@@ -84,6 +84,7 @@ export function OperationHistory({
   const [operationGroup, setOperationGroup] = useState(normalizedInitialGroup);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const filtersMounted = useRef(false);
 
   useEffect(() => {
     if (!sku && !warehouseId && operationGroup === "all") {
@@ -96,6 +97,19 @@ export function OperationHistory({
       void applyFilters(normalizedInitialGroup, false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!filtersMounted.current) {
+      filtersMounted.current = true;
+      return;
+    }
+
+    const timeoutId = window.setTimeout(
+      () => void applyFilters(operationGroup),
+      sku.trim() ? 350 : 0,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [operationGroup, sku, warehouseId]);
 
   async function applyFilters(nextGroup = operationGroup, updateUrl = true) {
     setLoading(true);
@@ -129,18 +143,21 @@ export function OperationHistory({
 
   return (
     <section className="panel panel--wide" id="history">
-      <div className="panel-heading panel-heading--history">
-        <div>
-          <h2>Журнал операций</h2>
-        </div>
-        <div className="filters filters--history">
+      <div className="panel-heading">
+        <h2>Журнал операций</h2>
+      </div>
+      <div className="history-filters" aria-label="Фильтры журнала операций">
+        <label>
+          <span>Товар</span>
           <input
             aria-label="SKU товара"
             value={sku}
             onChange={(event) => setSku(event.target.value)}
-            onKeyDown={(event) => event.key === "Enter" && void applyFilters()}
-            placeholder="Фильтр по SKU"
+            placeholder="Введите SKU"
           />
+        </label>
+        <label>
+          <span>Склад</span>
           <select
             aria-label="Склад"
             value={warehouseId}
@@ -153,35 +170,26 @@ export function OperationHistory({
               </option>
             ))}
           </select>
-          <button
-            className="button button--secondary button--small"
-            disabled={loading}
-            type="button"
-            onClick={() => void applyFilters()}
+        </label>
+        <label>
+          <span>Тип операции</span>
+          <select
+            aria-label="Тип операции"
+            value={operationGroup}
+            onChange={(event) => setOperationGroup(event.target.value)}
           >
-            Применить
-          </button>
-        </div>
-      </div>
-      <div className="history-tabs" aria-label="Фильтр истории">
-        {filters.map((filter) => (
-          <button
-            className={
-              operationGroup === filter.id
-                ? "history-tab history-tab--active"
-                : "history-tab"
-            }
-            key={filter.id}
-            type="button"
-            aria-pressed={operationGroup === filter.id}
-            onClick={() => {
-              setOperationGroup(filter.id);
-              void applyFilters(filter.id);
-            }}
-          >
-            {filter.label}
-          </button>
-        ))}
+            {filters.map((filter) => (
+              <option key={filter.id} value={filter.id}>
+                {filter.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {loading && (
+          <span className="history-filter-status" aria-live="polite">
+            Обновляем…
+          </span>
+        )}
       </div>
       {error && (
         <p className="inline-feedback inline-feedback--error">{error}</p>

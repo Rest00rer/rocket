@@ -131,6 +131,7 @@ export function App() {
               transfers={data.transfers}
               fbs={data.fbs}
               fbo={data.fbo}
+              focusSection={location.params.get("section") ?? ""}
               onComplete={update}
             />
           </div>

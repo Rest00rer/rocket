@@ -1,6 +1,9 @@
 import hashlib
 import json
 
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as postgresql_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import DomainError
@@ -18,8 +21,26 @@ async def replay(
     session: AsyncSession, key: str, command: str, payload: dict
 ) -> tuple[dict | None, str]:
     digest = request_hash(command, payload)
-    record = await session.get(IdempotencyRecord, key)
+    insert_factory = (
+        postgresql_insert if session.get_bind().dialect.name == "postgresql" else sqlite_insert
+    )
+    await session.execute(
+        insert_factory(IdempotencyRecord)
+        .values(
+            key=key,
+            command=command,
+            request_hash=digest,
+            status_code=0,
+            response_body={},
+        )
+        .on_conflict_do_nothing(index_elements=[IdempotencyRecord.key])
+    )
+    record = await session.scalar(
+        select(IdempotencyRecord).where(IdempotencyRecord.key == key).with_for_update()
+    )
     if record is None:
+        return None, digest
+    if record.status_code == 0:
         return None, digest
     if record.request_hash != digest or record.command != command:
         raise DomainError(
@@ -29,7 +50,7 @@ async def replay(
     return record.response_body, digest
 
 
-def remember(
+async def remember(
     session: AsyncSession,
     *,
     key: str,
@@ -38,12 +59,19 @@ def remember(
     response: dict,
     status_code: int = 200,
 ) -> None:
-    session.add(
-        IdempotencyRecord(
-            key=key,
-            command=command,
-            request_hash=digest,
-            status_code=status_code,
-            response_body=response,
+    record = await session.get(IdempotencyRecord, key)
+    if record is None:
+        session.add(
+            IdempotencyRecord(
+                key=key,
+                command=command,
+                request_hash=digest,
+                status_code=status_code,
+                response_body=response,
+            )
         )
-    )
+        return
+    record.command = command
+    record.request_hash = digest
+    record.status_code = status_code
+    record.response_body = response

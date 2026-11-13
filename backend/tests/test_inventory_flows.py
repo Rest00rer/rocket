@@ -337,3 +337,32 @@ async def test_concurrent_reservations_never_overbook_stock(
     assert item["on_hand"] == 5
     assert item["reserved_fbs"] == 4
     assert item["available"] == 1
+
+
+async def test_concurrent_retries_with_same_idempotency_key_replay_one_result(
+    client: AsyncClient, catalog: dict
+) -> None:
+    payload = {
+        "product_id": catalog["products"]["SKU-101"]["id"],
+        "warehouse_id": catalog["warehouses"]["Север"]["id"],
+        "quantity": 3,
+    }
+    idempotency_key = key()
+
+    first, second = await asyncio.gather(
+        client.post(
+            "/api/fbs/reservations",
+            json=payload,
+            headers={"Idempotency-Key": idempotency_key},
+        ),
+        client.post(
+            "/api/fbs/reservations",
+            json=payload,
+            headers={"Idempotency-Key": idempotency_key},
+        ),
+    )
+
+    assert first.status_code == second.status_code == 201
+    assert first.json() == second.json()
+    item = await inventory_item(client, "SKU-101", "Север")
+    assert item["reserved_fbs"] == 3

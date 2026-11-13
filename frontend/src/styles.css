@@ -506,6 +506,15 @@ td .tag {
 .quantity-field input {
   max-width: 130px;
 }
+.stock-hint {
+  margin: -5px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.stock-hint--error {
+  color: var(--red);
+}
 
 .button {
   display: inline-flex;

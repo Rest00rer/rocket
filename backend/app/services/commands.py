@@ -15,10 +15,11 @@ from app.models.fbo import FboShipment
 from app.models.fbs import FbsReservation
 from app.models.transfer import Transfer
 from app.repositories.catalog import get_product, get_warehouse
-from app.repositories.inventory import ensure_available, get_balance_for_update
+from app.repositories.inventory import get_balance_for_update
 from app.schemas.common import QuantityCommand
 from app.schemas.transfer import TransferCreate
 from app.services.idempotency import remember, replay
+from app.services.inventory import ensure_available
 from app.services.operations import log_operation
 
 
@@ -58,7 +59,7 @@ async def receive_stock(session: AsyncSession, command: QuantityCommand, key: st
         await session.flush()
         operation.entity_id = operation.id
         response = balance_result(operation.id, "received", balance)
-        remember(
+        await remember(
             session,
             key=key,
             command="receipt",
@@ -124,7 +125,7 @@ async def delete_transfer(session: AsyncSession, transfer_id: uuid.UUID, key: st
         )
         await session.delete(transfer)
         response = {"entity_id": str(transfer_id), "status": "deleted", "balance": None}
-        remember(
+        await remember(
             session,
             key=key,
             command="transfer_delete",
@@ -168,7 +169,7 @@ async def dispatch_transfer(session: AsyncSession, transfer_id: uuid.UUID, key: 
             entity_id=transfer.id,
         )
         response = balance_result(transfer.id, transfer.status, balance)
-        remember(
+        await remember(
             session,
             key=key,
             command="transfer_dispatch",
@@ -212,7 +213,7 @@ async def receive_transfer(session: AsyncSession, transfer_id: uuid.UUID, key: s
             entity_id=transfer.id,
         )
         response = balance_result(transfer.id, transfer.status, balance)
-        remember(
+        await remember(
             session,
             key=key,
             command="transfer_receive",
@@ -247,7 +248,7 @@ async def reserve_fbs(session: AsyncSession, command: QuantityCommand, key: str)
             entity_id=reservation.id,
         )
         response = balance_result(reservation.id, reservation.status, balance)
-        remember(
+        await remember(
             session,
             key=key,
             command="fbs_reserve",
@@ -301,7 +302,7 @@ async def transition_fbs(
             entity_id=reservation.id,
         )
         response = balance_result(reservation.id, reservation.status, balance)
-        remember(
+        await remember(
             session,
             key=key,
             command=command_name,
@@ -336,7 +337,7 @@ async def dispatch_fbo(session: AsyncSession, command: QuantityCommand, key: str
             entity_id=shipment.id,
         )
         response = balance_result(shipment.id, shipment.status, balance)
-        remember(
+        await remember(
             session,
             key=key,
             command="fbo_dispatch",
@@ -372,7 +373,7 @@ async def receive_fbo(session: AsyncSession, shipment_id: uuid.UUID, key: str) -
             entity_id=shipment.id,
         )
         response = {"entity_id": str(shipment.id), "status": shipment.status, "balance": None}
-        remember(
+        await remember(
             session,
             key=key,
             command="fbo_receive",

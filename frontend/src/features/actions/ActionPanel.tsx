@@ -2,7 +2,12 @@ import { type FormEvent, useMemo, useState } from "react";
 
 import { errorMessage } from "../../app/useCheckStock";
 import { ApiError, command, mutate } from "../../shared/api/client";
-import type { Product, Transfer, Warehouse } from "../../shared/api/types";
+import type {
+  InventoryItem,
+  Product,
+  Transfer,
+  Warehouse,
+} from "../../shared/api/types";
 
 type ActionKind = "receipt" | "transfer" | "fbs" | "fbo";
 
@@ -16,10 +21,12 @@ const actions: Array<{ id: ActionKind; label: string }> = [
 export function ActionPanel({
   products,
   warehouses,
+  inventory,
   onComplete,
 }: {
   products: Product[];
   warehouses: Warehouse[];
+  inventory: InventoryItem[];
   onComplete: () => Promise<void>;
 }) {
   const activeWarehouses = useMemo(
@@ -38,6 +45,17 @@ export function ActionPanel({
     type: "ok" | "error";
     text: string;
   } | null>(null);
+  const selectedBalance = useMemo(
+    () =>
+      inventory.find(
+        (item) =>
+          item.product.id === productId && item.warehouse.id === warehouseId,
+      ),
+    [inventory, productId, warehouseId],
+  );
+  const onHand = selectedBalance?.on_hand ?? 0;
+  const available = selectedBalance?.available ?? 0;
+  const insufficient = kind !== "receipt" && quantity > available;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -171,9 +189,21 @@ export function ActionPanel({
             }
           />
         </label>
+        <p
+          className={
+            insufficient ? "stock-hint stock-hint--error" : "stock-hint"
+          }
+          role={insufficient ? "alert" : undefined}
+        >
+          {kind === "receipt"
+            ? `На складе: ${onHand} шт. · После приёмки: ${onHand + quantity} шт.`
+            : insufficient
+              ? `Недостаточно: доступно ${available} шт., запрошено ${quantity}`
+              : `Доступно: ${available} шт. · После операции: ${available - quantity} шт.`}
+        </p>
         <button
           className="button button--primary form-submit"
-          disabled={busy}
+          disabled={busy || insufficient}
           type="submit"
         >
           {busy

@@ -123,6 +123,7 @@ export function App() {
             <ActionPanel
               products={data.products}
               warehouses={data.warehouses}
+              inventory={data.inventory.items}
               onComplete={update}
             />
             <MovementQueues

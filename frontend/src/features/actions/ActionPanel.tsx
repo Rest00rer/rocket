@@ -94,9 +94,9 @@ export function ActionPanel({
     <section className="panel action-panel" id="actions">
       <div className="panel-heading panel-heading--stacked">
         <div>
-          <h2>Операция</h2>
+          <h2>Новая операция</h2>
         </div>
-        <div className="action-tabs" role="tablist" aria-label="Тип операции">
+        <div className="action-tabs" aria-label="Тип операции">
           {actions.map((action) => (
             <button
               className={
@@ -106,8 +106,7 @@ export function ActionPanel({
               }
               key={action.id}
               type="button"
-              role="tab"
-              aria-selected={kind === action.id}
+              aria-pressed={kind === action.id}
               onClick={() => {
                 setKind(action.id);
                 setFeedback(null);

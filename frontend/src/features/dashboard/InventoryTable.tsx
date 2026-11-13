@@ -1,7 +1,14 @@
 import type { InventoryItem } from "../../shared/api/types";
+import { historyHref, warehouseHref } from "../../shared/navigation";
 import { EmptyState } from "../../shared/ui/Feedback";
 
-export function InventoryTable({ items }: { items: InventoryItem[] }) {
+export function InventoryTable({
+  items,
+  selectedSku,
+}: {
+  items: InventoryItem[];
+  selectedSku?: string;
+}) {
   return (
     <section className="panel panel--wide" id="inventory">
       <div className="panel-heading">
@@ -24,13 +31,32 @@ export function InventoryTable({ items }: { items: InventoryItem[] }) {
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={`${item.product.id}-${item.warehouse.id}`}>
+                <tr
+                  className={
+                    item.product.sku === selectedSku
+                      ? "table-row--selected"
+                      : undefined
+                  }
+                  key={`${item.product.id}-${item.warehouse.id}`}
+                >
                   <td>
-                    <strong>{item.product.name}</strong>
-                    <span className="secondary-text">{item.product.sku}</span>
+                    <a
+                      className="entity-link entity-link--stacked"
+                      href={historyHref({ sku: item.product.sku })}
+                      title={`Открыть историю ${item.product.sku}`}
+                    >
+                      <strong>{item.product.name}</strong>
+                      <span className="secondary-text">{item.product.sku}</span>
+                    </a>
                   </td>
                   <td>
-                    {item.warehouse.name}
+                    <a
+                      className="entity-link"
+                      href={warehouseHref(item.warehouse.id)}
+                      title={`Открыть склад «${item.warehouse.name}»`}
+                    >
+                      {item.warehouse.name}
+                    </a>
                     {item.warehouse.archived && (
                       <span className="tag tag--muted">Архив</span>
                     )}

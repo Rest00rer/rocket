@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { errorMessage } from "../../app/useCheckStock";
 import { command } from "../../shared/api/client";
+import { historyHref, warehouseHref } from "../../shared/navigation";
 import type {
   FboShipment,
   FbsReservation,
@@ -23,10 +24,23 @@ function RecordTitle({
   const product = products.find((item) => item.id === productId);
   return (
     <div className="queue-title">
-      <strong>{product?.name ?? "Неизвестный товар"}</strong>
-      <span>
-        {product?.sku ?? "—"} · {quantity} шт.
-      </span>
+      {product ? (
+        <a
+          className="entity-link entity-link--stacked"
+          href={historyHref({ sku: product.sku })}
+          title={`Открыть историю ${product.sku}`}
+        >
+          <strong>{product.name}</strong>
+          <span>
+            {product.sku} · {quantity} шт.
+          </span>
+        </a>
+      ) : (
+        <>
+          <strong>Неизвестный товар</strong>
+          <span>— · {quantity} шт.</span>
+        </>
+      )}
     </div>
   );
 }
@@ -103,9 +117,19 @@ export function MovementQueues({
                 quantity={transfer.quantity}
               />
               <p className="route">
-                {warehouseName(transfer.source_warehouse_id)}
+                <a
+                  className="entity-link"
+                  href={warehouseHref(transfer.source_warehouse_id)}
+                >
+                  {warehouseName(transfer.source_warehouse_id)}
+                </a>
                 <span aria-hidden="true">→</span>
-                {warehouseName(transfer.destination_warehouse_id)}
+                <a
+                  className="entity-link"
+                  href={warehouseHref(transfer.destination_warehouse_id)}
+                >
+                  {warehouseName(transfer.destination_warehouse_id)}
+                </a>
               </p>
               <button
                 className="button button--secondary button--small"
@@ -139,7 +163,13 @@ export function MovementQueues({
                 quantity={reservation.quantity}
               />
               <p className="route">
-                Склад: {warehouseName(reservation.warehouse_id)}
+                Склад:
+                <a
+                  className="entity-link"
+                  href={warehouseHref(reservation.warehouse_id)}
+                >
+                  {warehouseName(reservation.warehouse_id)}
+                </a>
               </p>
               <div className="button-row">
                 <button
@@ -184,7 +214,13 @@ export function MovementQueues({
                 quantity={shipment.quantity}
               />
               <p className="route">
-                Со склада: {warehouseName(shipment.warehouse_id)}
+                Со склада:
+                <a
+                  className="entity-link"
+                  href={warehouseHref(shipment.warehouse_id)}
+                >
+                  {warehouseName(shipment.warehouse_id)}
+                </a>
               </p>
               <button
                 className="button button--secondary button--small"

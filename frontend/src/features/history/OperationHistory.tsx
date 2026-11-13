@@ -3,6 +3,11 @@ import { useEffect, useState } from "react";
 import { errorMessage } from "../../app/useCheckStock";
 import { loadOperations } from "../../shared/api/client";
 import type { Operation, Warehouse } from "../../shared/api/types";
+import {
+  historyHref,
+  inventoryHref,
+  warehouseHref,
+} from "../../shared/navigation";
 import { EmptyState } from "../../shared/ui/Feedback";
 
 const operationLabels: Record<string, string> = {
@@ -51,15 +56,26 @@ function formatDate(value: string) {
 
 export function OperationHistory({
   initialOperations,
+  initialOperationGroup,
+  initialSku,
+  initialWarehouseId,
   warehouses,
 }: {
   initialOperations: Operation[];
+  initialOperationGroup: string;
+  initialSku: string;
+  initialWarehouseId: string;
   warehouses: Warehouse[];
 }) {
+  const normalizedInitialGroup = filters.some(
+    (filter) => filter.id === initialOperationGroup,
+  )
+    ? initialOperationGroup
+    : "all";
   const [items, setItems] = useState(initialOperations);
-  const [sku, setSku] = useState("");
-  const [warehouseId, setWarehouseId] = useState("");
-  const [operationGroup, setOperationGroup] = useState("all");
+  const [sku, setSku] = useState(initialSku);
+  const [warehouseId, setWarehouseId] = useState(initialWarehouseId);
+  const [operationGroup, setOperationGroup] = useState(normalizedInitialGroup);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,7 +85,13 @@ export function OperationHistory({
     }
   }, [initialOperations, operationGroup, sku, warehouseId]);
 
-  async function applyFilters(nextGroup = operationGroup) {
+  useEffect(() => {
+    if (initialSku || initialWarehouseId || normalizedInitialGroup !== "all") {
+      void applyFilters(normalizedInitialGroup, false);
+    }
+  }, []);
+
+  async function applyFilters(nextGroup = operationGroup, updateUrl = true) {
     setLoading(true);
     setError(null);
     try {
@@ -81,6 +103,17 @@ export function OperationHistory({
         params.append("operation_type", type),
       );
       setItems((await loadOperations(params)).items);
+      if (updateUrl) {
+        window.history.replaceState(
+          null,
+          "",
+          historyHref({
+            sku: sku.trim() || undefined,
+            warehouseId: warehouseId || undefined,
+            group: nextGroup === "all" ? undefined : nextGroup,
+          }),
+        );
+      }
     } catch (requestError) {
       setError(errorMessage(requestError));
     } finally {
@@ -92,16 +125,18 @@ export function OperationHistory({
     <section className="panel panel--wide" id="history">
       <div className="panel-heading panel-heading--history">
         <div>
-          <h2>История операций</h2>
+          <h2>Журнал операций</h2>
         </div>
         <div className="filters filters--history">
           <input
+            aria-label="SKU товара"
             value={sku}
             onChange={(event) => setSku(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && void applyFilters()}
             placeholder="Фильтр по SKU"
           />
           <select
+            aria-label="Склад"
             value={warehouseId}
             onChange={(event) => setWarehouseId(event.target.value)}
           >
@@ -132,6 +167,7 @@ export function OperationHistory({
             }
             key={filter.id}
             type="button"
+            aria-pressed={operationGroup === filter.id}
             onClick={() => {
               setOperationGroup(filter.id);
               void applyFilters(filter.id);
@@ -163,21 +199,43 @@ export function OperationHistory({
                     operation.operation_type}
                 </strong>
                 <p>
-                  {operation.product_name
-                    ? `${operation.product_name} · ${operation.sku}`
-                    : "Складская операция"}
+                  {operation.product_name ? (
+                    <a
+                      className="entity-link"
+                      href={inventoryHref(operation.sku ?? undefined)}
+                      title={`Показать ${operation.sku} в остатках`}
+                    >
+                      {operation.product_name} · {operation.sku}
+                    </a>
+                  ) : (
+                    "Складская операция"
+                  )}
                 </p>
               </div>
               <div className="history-route">
                 {operation.source_warehouse_name && (
-                  <span>{operation.source_warehouse_name}</span>
+                  <a
+                    className="entity-link"
+                    href={warehouseHref(
+                      operation.source_warehouse_id ?? undefined,
+                    )}
+                  >
+                    {operation.source_warehouse_name}
+                  </a>
                 )}
                 {operation.source_warehouse_name &&
                   operation.destination_warehouse_name && (
                     <span aria-hidden="true">→</span>
                   )}
                 {operation.destination_warehouse_name && (
-                  <span>{operation.destination_warehouse_name}</span>
+                  <a
+                    className="entity-link"
+                    href={warehouseHref(
+                      operation.destination_warehouse_id ?? undefined,
+                    )}
+                  >
+                    {operation.destination_warehouse_name}
+                  </a>
                 )}
               </div>
               <strong className="history-quantity">

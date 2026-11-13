@@ -5,9 +5,11 @@ import { mutate } from "../../shared/api/client";
 import type { Warehouse } from "../../shared/api/types";
 
 export function WarehousePanel({
+  selectedWarehouseId,
   warehouses,
   onComplete,
 }: {
+  selectedWarehouseId?: string;
   warehouses: Warehouse[];
   onComplete: () => Promise<void>;
 }) {
@@ -71,7 +73,7 @@ export function WarehousePanel({
     <section className="panel" id="warehouses">
       <div className="panel-heading">
         <div>
-          <h2>Склады</h2>
+          <h2>Управление складами</h2>
         </div>
       </div>
       <form className="add-warehouse" onSubmit={create}>
@@ -97,7 +99,14 @@ export function WarehousePanel({
       )}
       <ul className="warehouse-list">
         {warehouses.map((warehouse) => (
-          <li key={warehouse.id}>
+          <li
+            className={
+              warehouse.id === selectedWarehouseId
+                ? "warehouse-row--selected"
+                : undefined
+            }
+            key={warehouse.id}
+          >
             {editingId === warehouse.id ? (
               <>
                 <input

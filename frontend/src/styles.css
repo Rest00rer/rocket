@@ -507,6 +507,9 @@ td .tag {
   background: var(--surface-subtle);
   color: var(--red);
 }
+.button--danger {
+  color: var(--red);
+}
 .button--small {
   min-height: 33px;
   padding: 6px 10px;

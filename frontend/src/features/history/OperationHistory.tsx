@@ -13,6 +13,7 @@ import { EmptyState } from "../../shared/ui/Feedback";
 const operationLabels: Record<string, string> = {
   receipt: "Приёмка",
   transfer_created: "Перемещение создано",
+  transfer_deleted: "Черновик перемещения удалён",
   transfer_dispatched: "Перемещение отправлено",
   transfer_received: "Перемещение принято",
   fbs_reserved: "Резерв FBS",
@@ -31,7 +32,12 @@ const filters = [
   {
     id: "transfers",
     label: "Перемещения",
-    types: ["transfer_created", "transfer_dispatched", "transfer_received"],
+    types: [
+      "transfer_created",
+      "transfer_deleted",
+      "transfer_dispatched",
+      "transfer_received",
+    ],
   },
   {
     id: "fbs",

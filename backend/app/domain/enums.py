@@ -24,6 +24,7 @@ class OperationType(StrEnum):
     WAREHOUSE_RENAMED = "warehouse_renamed"
     WAREHOUSE_ARCHIVED = "warehouse_archived"
     TRANSFER_CREATED = "transfer_created"
+    TRANSFER_DELETED = "transfer_deleted"
     TRANSFER_DISPATCHED = "transfer_dispatched"
     TRANSFER_RECEIVED = "transfer_received"
     FBS_RESERVED = "fbs_reserved"

@@ -9,6 +9,7 @@ from app.schemas.shipment import FboShipmentOut, FbsReservationOut
 from app.schemas.transfer import TransferCreate, TransferOut
 from app.services.commands import (
     create_transfer,
+    delete_transfer,
     dispatch_fbo,
     dispatch_transfer,
     receive_fbo,
@@ -35,6 +36,11 @@ async def transfers(session: SessionDependency):
 @router.post("/transfers", response_model=TransferOut, status_code=status.HTTP_201_CREATED)
 async def transfer_create(payload: TransferCreate, session: SessionDependency):
     return await create_transfer(session, payload)
+
+
+@router.delete("/transfers/{transfer_id}", response_model=CommandResult)
+async def transfer_delete(transfer_id: uuid.UUID, session: SessionDependency, key: IdempotencyKey):
+    return await delete_transfer(session, transfer_id, key)
 
 
 @router.post("/transfers/{transfer_id}/dispatch", response_model=CommandResult)

@@ -16,6 +16,7 @@
 | POST    | `/receipts`                           | оформить приход |
 | POST    | `/transfers`                          | создать перемещение |
 | GET     | `/transfers`                          | список перемещений |
+| DELETE  | `/transfers/{id}`                     | удалить черновик перемещения |
 | POST    | `/transfers/{id}/dispatch`            | отправить между ФФ |
 | POST    | `/transfers/{id}/receive`             | принять на ФФ |
 | POST    | `/fbs/reservations`                   | зарезервировать |

@@ -70,11 +70,11 @@ export function MovementQueues({
   const warehouseName = (id: string) =>
     warehouses.find((item) => item.id === id)?.name ?? "—";
 
-  async function run(id: string, path: string) {
+  async function run(id: string, path: string, method = "POST") {
     setBusyId(id);
     setError(null);
     try {
-      await command(path);
+      await command(path, undefined, method);
       await onComplete();
     } catch (requestError) {
       setError(errorMessage(requestError));
@@ -131,23 +131,47 @@ export function MovementQueues({
                   {warehouseName(transfer.destination_warehouse_id)}
                 </a>
               </p>
-              <button
-                className="button button--secondary button--small"
-                disabled={busyId === transfer.id}
-                type="button"
-                onClick={() =>
-                  void run(
-                    transfer.id,
-                    `/transfers/${transfer.id}/${transfer.status === "draft" ? "dispatch" : "receive"}`,
-                  )
-                }
-              >
-                {busyId === transfer.id
-                  ? "Обновляем…"
-                  : transfer.status === "draft"
-                    ? "Отправить"
-                    : "Принять"}
-              </button>
+              <div className="button-row">
+                <button
+                  className="button button--secondary button--small"
+                  disabled={busyId === transfer.id}
+                  type="button"
+                  onClick={() =>
+                    void run(
+                      transfer.id,
+                      `/transfers/${transfer.id}/${transfer.status === "draft" ? "dispatch" : "receive"}`,
+                    )
+                  }
+                >
+                  {busyId === transfer.id
+                    ? "Обновляем…"
+                    : transfer.status === "draft"
+                      ? "Отправить"
+                      : "Принять"}
+                </button>
+                {transfer.status === "draft" && (
+                  <button
+                    className="button button--quiet button--small button--danger"
+                    disabled={busyId === transfer.id}
+                    type="button"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Удалить черновик перемещения? Остатки не изменятся.",
+                        )
+                      ) {
+                        void run(
+                          transfer.id,
+                          `/transfers/${transfer.id}`,
+                          "DELETE",
+                        );
+                      }
+                    }}
+                  >
+                    Удалить
+                  </button>
+                )}
+              </div>
             </article>
           ))}
 

@@ -96,6 +96,44 @@ async def create_transfer(session: AsyncSession, command: TransferCreate) -> Tra
     return transfer
 
 
+async def delete_transfer(session: AsyncSession, transfer_id: uuid.UUID, key: str) -> dict:
+    payload = {"transfer_id": str(transfer_id)}
+    async with session.begin():
+        previous, digest = await replay(session, key, "transfer_delete", payload)
+        if previous:
+            return previous
+        transfer = await session.scalar(
+            select(Transfer).where(Transfer.id == transfer_id).with_for_update()
+        )
+        if transfer is None:
+            raise DomainError("transfer_not_found", "Перемещение не найдено", status_code=404)
+        if transfer.status != TransferStatus.DRAFT:
+            raise DomainError(
+                "invalid_transfer_state",
+                "Удалить можно только черновик перемещения",
+            )
+        log_operation(
+            session,
+            OperationType.TRANSFER_DELETED,
+            product_id=transfer.product_id,
+            quantity=transfer.quantity,
+            source_warehouse_id=transfer.source_warehouse_id,
+            destination_warehouse_id=transfer.destination_warehouse_id,
+            entity_type="transfer",
+            entity_id=transfer.id,
+        )
+        await session.delete(transfer)
+        response = {"entity_id": str(transfer_id), "status": "deleted", "balance": None}
+        remember(
+            session,
+            key=key,
+            command="transfer_delete",
+            digest=digest,
+            response=response,
+        )
+    return response
+
+
 async def dispatch_transfer(session: AsyncSession, transfer_id: uuid.UUID, key: str) -> dict:
     payload = {"transfer_id": str(transfer_id)}
     async with session.begin():

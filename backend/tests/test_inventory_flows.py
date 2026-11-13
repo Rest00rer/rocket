@@ -142,6 +142,57 @@ async def test_transfer_dispatch_and_receive(client: AsyncClient, catalog: dict)
     assert (await inventory_item(client, "SKU-102", "Юг"))["on_hand"] == 4
 
 
+async def test_only_draft_transfer_can_be_deleted_without_changing_stock(
+    client: AsyncClient, catalog: dict
+) -> None:
+    payload = {
+        "product_id": catalog["products"]["SKU-102"]["id"],
+        "source_warehouse_id": catalog["warehouses"]["Север"]["id"],
+        "destination_warehouse_id": catalog["warehouses"]["Юг"]["id"],
+        "quantity": 4,
+    }
+    transfer = await client.post("/api/transfers", json=payload)
+    transfer_id = transfer.json()["id"]
+
+    deleted = await client.delete(
+        f"/api/transfers/{transfer_id}", headers={"Idempotency-Key": key()}
+    )
+
+    assert deleted.status_code == 200
+    assert deleted.json()["status"] == "deleted"
+    assert (await inventory_item(client, "SKU-102", "Север"))["on_hand"] == 5
+    assert not (await client.get("/api/transfers")).json()
+    history = (await client.get("/api/operations", params={"sku": "SKU-102"})).json()["items"]
+    assert {item["operation_type"] for item in history[:2]} == {
+        "transfer_created",
+        "transfer_deleted",
+    }
+
+
+async def test_sent_transfer_cannot_be_deleted(client: AsyncClient, catalog: dict) -> None:
+    transfer = await client.post(
+        "/api/transfers",
+        json={
+            "product_id": catalog["products"]["SKU-102"]["id"],
+            "source_warehouse_id": catalog["warehouses"]["Север"]["id"],
+            "destination_warehouse_id": catalog["warehouses"]["Юг"]["id"],
+            "quantity": 1,
+        },
+    )
+    transfer_id = transfer.json()["id"]
+    await client.post(
+        f"/api/transfers/{transfer_id}/dispatch",
+        headers={"Idempotency-Key": key()},
+    )
+
+    response = await client.delete(
+        f"/api/transfers/{transfer_id}", headers={"Idempotency-Key": key()}
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "invalid_transfer_state"
+
+
 async def test_shortage_on_selected_warehouse_does_not_use_other_stock(
     client: AsyncClient, catalog: dict
 ) -> None:

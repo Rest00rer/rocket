@@ -16,7 +16,7 @@ async def operations(
     sku: str | None = None,
     warehouse_id: uuid.UUID | None = None,
     operation_type: Annotated[list[str] | None, Query()] = None,
-    limit: Annotated[int, Query(ge=1, le=500)] = 100,
+    limit: Annotated[int | None, Query(ge=1, le=500)] = None,
 ):
     return {
         "items": await list_operations(

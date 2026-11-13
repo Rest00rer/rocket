@@ -277,6 +277,27 @@ async def test_operation_history_contains_business_events(
     assert history[0]["destination_warehouse_name"] == "Север"
 
 
+async def test_operation_history_searches_sku_by_partial_value(
+    client: AsyncClient, catalog: dict
+) -> None:
+    await client.post(
+        "/api/receipts",
+        json={
+            "product_id": catalog["products"]["SKU-101"]["id"],
+            "warehouse_id": catalog["warehouses"]["Север"]["id"],
+            "quantity": 1,
+        },
+        headers={"Idempotency-Key": key()},
+    )
+
+    history = (await client.get("/api/operations", params={"sku": "101"})).json()[
+        "items"
+    ]
+
+    assert history
+    assert all(item["sku"] == "SKU-101" for item in history)
+
+
 async def test_operation_history_accepts_multiple_operation_types(
     client: AsyncClient, catalog: dict
 ) -> None:

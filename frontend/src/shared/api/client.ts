@@ -64,7 +64,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       request<Transfer[]>("/transfers"),
       request<FbsReservation[]>("/fbs/reservations"),
       request<FboShipment[]>("/fbo/shipments"),
-      request<OperationList>("/operations?limit=100"),
+      request<OperationList>("/operations"),
     ]);
 
   return {

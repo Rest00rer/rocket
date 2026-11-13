@@ -115,7 +115,7 @@ export function OperationHistory({
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ limit: "100" });
+      const params = new URLSearchParams();
       if (sku.trim()) params.set("sku", sku.trim());
       if (warehouseId) params.set("warehouse_id", warehouseId);
       const selectedFilter = filters.find((filter) => filter.id === nextGroup);

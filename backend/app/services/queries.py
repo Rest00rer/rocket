@@ -107,7 +107,7 @@ async def list_operations(
     sku: str | None = None,
     warehouse_id: uuid.UUID | None = None,
     operation_types: list[str] | None = None,
-    limit: int = 100,
+    limit: int | None = None,
 ) -> list[dict]:
     source = Warehouse.__table__.alias("source_warehouse")
     destination = Warehouse.__table__.alias("destination_warehouse")
@@ -123,10 +123,9 @@ async def list_operations(
         .outerjoin(source, source.c.id == Operation.source_warehouse_id)
         .outerjoin(destination, destination.c.id == Operation.destination_warehouse_id)
         .order_by(Operation.created_at.desc())
-        .limit(limit)
     )
     if sku:
-        query = query.where(Product.sku == sku)
+        query = query.where(Product.sku.ilike(f"%{sku.strip()}%"))
     if warehouse_id:
         query = query.where(
             or_(
@@ -136,6 +135,8 @@ async def list_operations(
         )
     if operation_types:
         query = query.where(Operation.operation_type.in_(operation_types))
+    if limit is not None:
+        query = query.limit(limit)
     rows = (await session.execute(query)).all()
     return [
         {
